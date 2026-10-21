@@ -1,3 +1,4 @@
+#define Pl_write
 !WRF:MEDIATION_LAYER:PHYSICS
 ! *** add new modules of schemes here
 !
@@ -107,6 +108,34 @@ SUBROUTINE microphysics_driver(                                          &
 #if ( WRF_CHEM == 1 )
                       ,rainprod, evapprod                                &
                       ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
+#endif
+# ifdef Pl_write
+                          ,pni_ide_n, pni_iha_n, pni_ihm_n, &
+                          pni_inu_n, pni_rci_n, pni_rfz_n, pni_sci_n, &
+                          pni_wfz_n, pnr_gml_p, pnr_rcg_p, pnr_rcg_n, &
+                          pnr_rci_n, pnr_rcs_p, pnr_rcs_n, pnr_rfz_n, &
+                          pnr_sml_p, pnc_gcw_w, pnc_rcw_w, pnc_scw_w, &
+                          pnc_wau_w, pnc_wcd_w, pnr_rcr_w, pnr_rev_w, &
+                          pnr_wau_w, pni_iau_n,                       &
+                          prg_gcw_n, prg_gde_n, prg_ihm_n, prg_rcg_p, &
+                          prg_rcg_n, prg_rci_n, prg_rcs_n, prg_rfz_n, &
+                          prg_scw_n, pri_ide_n, pri_iha_n, pri_ihm_n, &
+                          pri_inu_n, pri_rci_n, pri_rfz_n, pri_wfz_n, &
+                          prr_gml_p, prr_rcg_p, prr_rcg_n, prr_rci_n, &
+                          prr_rcs_n, prr_sml_p, prr_rcs_p, prs_iau_n, &
+                          prs_ide_n, prs_ihm_n, prs_rcs_p, prs_rcs_n, &
+                          prs_sci_n, prs_scw_n, prs_sde_n, prr_rcw_w, &
+                          prr_wau_w, prv_rev_w, prw_vcd_w, prw_iml_p, &
+                          pri_whm_n,                                  &
+                          prc_sed, prr_sed, pri_sed, prs_sed, prg_sed, &
+                          l_pri_inu, l_pri_ide, l_prs_ide, l_prs_sde_b0, &
+                          l_prg_gde_b0, l_pri_iha, l_pri_wfz, l_pri_rfz, &
+                          l_prg_rfz, l_prs_scw, l_prg_scw, l_prg_gcw, &
+                          l_prg_rcs, l_prs_rcs, l_prr_rci, l_prg_rcg, &
+                          l_prr_sml, l_prr_gml, l_prr_rcg, l_prr_rcs, &
+                          l_prs_sde_a0, l_prg_gde_a0, &
+                          l_prw_vcd, l_prv_rev, &
+                          l_xri, l_xrc &
 #endif
                       ,qnwfa2d, qnifa2d, qnbca2d                         & ! for water/ice-friendly/black carbon aerosols
                       ,qnocbb2d, qnbcbb2d                                & ! for biomass burning aerosols
@@ -759,6 +788,35 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                       :: CU_UAF
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: mskf_refl_10cm
 # endif
+#ifdef Pl_write
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) ::  &
+                          pni_ide_n, pni_iha_n, pni_ihm_n, &
+                          pni_inu_n, pni_rci_n, pni_rfz_n, pni_sci_n, &
+                          pni_wfz_n, pnr_gml_p, pnr_rcg_p, pnr_rcg_n, &
+                          pnr_rci_n, pnr_rcs_p, pnr_rcs_n, pnr_rfz_n, &
+                          pnr_sml_p, pnc_gcw_w, pnc_rcw_w, pnc_scw_w, &
+                          pnc_wau_w, pnc_wcd_w, pnr_rcr_w, pnr_rev_w, &
+                          pnr_wau_w, pni_iau_n,                       &
+                          prg_gcw_n, prg_gde_n, prg_ihm_n, prg_rcg_p, &
+                          prg_rcg_n, prg_rci_n, prg_rcs_n, prg_rfz_n, &
+                          prg_scw_n, pri_ide_n, pri_iha_n, pri_ihm_n, &
+                          pri_inu_n, pri_rci_n, pri_rfz_n, pri_wfz_n, &
+                          prr_gml_p, prr_rcg_p, prr_rcg_n, prr_rci_n, &
+                          prr_rcs_n, prr_sml_p, prr_rcs_p, prs_iau_n, &
+                          prs_ide_n, prs_ihm_n, prs_rcs_p, prs_rcs_n, &
+                          prs_sci_n, prs_scw_n, prs_sde_n, prr_rcw_w, &
+                          prr_wau_w, prv_rev_w, prw_vcd_w, prw_iml_p, &
+                          pri_whm_n,                                  &
+                          prc_sed, prr_sed, pri_sed, prs_sed, prg_sed,&
+                          l_pri_inu, l_pri_ide, l_prs_ide, l_prs_sde_b0, &
+                          l_prg_gde_b0, l_pri_iha, l_pri_wfz, l_pri_rfz, &
+                          l_prg_rfz, l_prs_scw, l_prg_scw, l_prg_gcw, &
+                          l_prg_rcs, l_prs_rcs, l_prr_rci, l_prg_rcg, &
+                          l_prr_sml, l_prr_gml, l_prr_rcg, l_prr_rcs, &
+                          l_prs_sde_a0, l_prg_gde_a0, &
+                          l_prw_vcd, l_prv_rev, &
+                          l_xri, l_xrc
+#endif
 
 !  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
 
@@ -1082,6 +1140,55 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRAUPELNC=GRAUPELNC,                &
                      GRAUPELNCV=GRAUPELNCV,              &
                      SR=SR,                              &
+# ifdef Pl_write
+                     PNI_IDE_N=pni_ide_n, PNI_IHA_N=pni_iha_n,      &
+                     PNI_IHM_N=pni_ihm_n, PNI_INU_N=pni_inu_n,      &
+                     PNI_RCI_N=pni_rci_n, PNI_RFZ_N=pni_rfz_n,      &
+                     PNI_SCI_N=pni_sci_n, PNI_WFZ_N=pni_wfz_n,      &
+                     PNR_GML_P=pnr_gml_p, PNR_RCG_P=pnr_rcg_p,      &
+                     PNR_RCG_N=pnr_rcg_n, PNR_RCI_N=pnr_rci_n,      &
+                     PNR_RCS_P=pnr_rcs_p, PNR_RCS_N=pnr_rcs_n,      &
+                     PNR_RFZ_N=pnr_rfz_n, PNR_SML_P=pnr_sml_p,      &
+                     PNC_GCW_W=pnc_gcw_w, PNC_RCW_W=pnc_rcw_w,      &
+                     PNC_SCW_W=pnc_scw_w, PNC_WAU_W=pnc_wau_w,      &
+                     PNC_WCD_W=pnc_wcd_w, PNR_RCR_W=pnr_rcr_w,      &
+                     PNR_REV_W=pnr_rev_w, PNR_WAU_W=pnr_wau_w,      &
+                     PNI_IAU_N=pni_iau_n, PRG_GCW_N=prg_gcw_n,      &
+                     PRG_GDE_N=prg_gde_n, PRG_IHM_N=prg_ihm_n,      &
+                     PRG_RCG_P=prg_rcg_p, PRG_RCG_N=prg_rcg_n,      &
+                     PRG_RCI_N=prg_rci_n, PRG_RCS_N=prg_rcs_n,      &
+                     PRG_RFZ_N=prg_rfz_n, PRG_SCW_N=prg_scw_n,      &
+                     PRI_IDE_N=pri_ide_n, PRI_IHA_N=pri_iha_n,      &
+                     PRI_IHM_N=pri_ihm_n, PRI_INU_N=pri_inu_n,      &
+                     PRI_RCI_N=pri_rci_n, PRI_RFZ_N=pri_rfz_n,      &
+                     PRI_WFZ_N=pri_wfz_n, PRR_GML_P=prr_gml_p,      &
+                     PRR_RCG_P=prr_rcg_p, PRR_RCG_N=prr_rcg_n,      &
+                     PRR_RCI_N=prr_rci_n, PRR_RCS_N=prr_rcs_n,      &
+                     PRR_SML_P=prr_sml_p, PRR_RCS_P=prr_rcs_p,      &
+                     PRS_IAU_N=prs_iau_n, PRS_IDE_N=prs_ide_n,      &
+                     PRS_IHM_N=prs_ihm_n, PRS_RCS_P=prs_rcs_p,      &
+                     PRS_RCS_N=prs_rcs_n, PRS_SCI_N=prs_sci_n,      &
+                     PRS_SCW_N=prs_scw_n, PRS_SDE_N=prs_sde_n,      &
+                     PRR_RCW_W=prr_rcw_w, PRR_WAU_W=prr_wau_w,      &
+                     PRV_REV_W=prv_rev_w, PRW_VCD_W=prw_vcd_w,      &
+                     PRW_IML_P=prw_iml_p, PRI_WHM_N=pri_whm_n,      &
+                     PRC_SED=prc_sed,     PRR_SED=prr_sed,          &
+                     PRI_SED=pri_sed,     PRS_SED=prs_sed,          &
+                     PRG_SED=prg_sed,                               &
+                     L_PRI_INU=l_pri_inu, L_PRI_IDE=l_pri_ide,      &
+                     L_PRS_IDE=l_prs_ide, L_PRS_SDE_B0=l_prs_sde_b0,      &
+                     L_PRG_GDE_B0=l_prg_gde_b0, L_PRI_IHA=l_pri_iha,      &
+                     L_PRI_WFZ=l_pri_wfz, L_PRI_RFZ=l_pri_rfz,      &
+                     L_PRG_RFZ=l_prg_rfz, L_PRS_SCW=l_prs_scw,      &
+                     L_PRG_SCW=l_prg_scw, L_PRG_GCW=l_prg_gcw,      &
+                     L_PRG_RCS=l_prg_rcs, L_PRS_RCS=l_prs_rcs,      &
+                     L_PRR_RCI=l_prr_rci, L_PRG_RCG=l_prg_rcg,      &
+                     L_PRR_SML=l_prr_sml, L_PRR_GML=l_prr_gml,      &
+                     L_PRR_RCG=l_prr_rcg, L_PRR_RCS=l_prr_rcs,      &
+                     L_PRS_SDE_A0=l_prs_sde_a0, L_PRG_GDE_A0=l_prg_gde_a0,      &
+                     L_PRW_VCD=l_prw_vcd, L_PRV_REV=l_prv_rev,      &
+                     L_XRI=l_xri, L_XRC=l_xrc,                      &
+# endif
 #if ( WRF_CHEM == 1 )
                      WETSCAV_ON=config_flags%wetscav_onoff == 1, &
                      RAINPROD=rainprod,                  &
@@ -1177,6 +1284,55 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRAUPELNC=GRAUPELNC,                &
                      GRAUPELNCV=GRAUPELNCV,              &
                      SR=SR,                              &
+# ifdef Pl_write
+                     PNI_IDE_N=pni_ide_n, PNI_IHA_N=pni_iha_n,      &
+                     PNI_IHM_N=pni_ihm_n, PNI_INU_N=pni_inu_n,      &
+                     PNI_RCI_N=pni_rci_n, PNI_RFZ_N=pni_rfz_n,      &
+                     PNI_SCI_N=pni_sci_n, PNI_WFZ_N=pni_wfz_n,      &
+                     PNR_GML_P=pnr_gml_p, PNR_RCG_P=pnr_rcg_p,      &
+                     PNR_RCG_N=pnr_rcg_n, PNR_RCI_N=pnr_rci_n,      &
+                     PNR_RCS_P=pnr_rcs_p, PNR_RCS_N=pnr_rcs_n,      &
+                     PNR_RFZ_N=pnr_rfz_n, PNR_SML_P=pnr_sml_p,      &
+                     PNC_GCW_W=pnc_gcw_w, PNC_RCW_W=pnc_rcw_w,      &
+                     PNC_SCW_W=pnc_scw_w, PNC_WAU_W=pnc_wau_w,      &
+                     PNC_WCD_W=pnc_wcd_w, PNR_RCR_W=pnr_rcr_w,      &
+                     PNR_REV_W=pnr_rev_w, PNR_WAU_W=pnr_wau_w,      &
+                     PNI_IAU_N=pni_iau_n, PRG_GCW_N=prg_gcw_n,      &
+                     PRG_GDE_N=prg_gde_n, PRG_IHM_N=prg_ihm_n,      &
+                     PRG_RCG_P=prg_rcg_p, PRG_RCG_N=prg_rcg_n,      &
+                     PRG_RCI_N=prg_rci_n, PRG_RCS_N=prg_rcs_n,      &
+                     PRG_RFZ_N=prg_rfz_n, PRG_SCW_N=prg_scw_n,      &
+                     PRI_IDE_N=pri_ide_n, PRI_IHA_N=pri_iha_n,      &
+                     PRI_IHM_N=pri_ihm_n, PRI_INU_N=pri_inu_n,      &
+                     PRI_RCI_N=pri_rci_n, PRI_RFZ_N=pri_rfz_n,      &
+                     PRI_WFZ_N=pri_wfz_n, PRR_GML_P=prr_gml_p,      &
+                     PRR_RCG_P=prr_rcg_p, PRR_RCG_N=prr_rcg_n,      &
+                     PRR_RCI_N=prr_rci_n, PRR_RCS_N=prr_rcs_n,      &
+                     PRR_SML_P=prr_sml_p, PRR_RCS_P=prr_rcs_p,      &
+                     PRS_IAU_N=prs_iau_n, PRS_IDE_N=prs_ide_n,      &
+                     PRS_IHM_N=prs_ihm_n, PRS_RCS_P=prs_rcs_p,      &
+                     PRS_RCS_N=prs_rcs_n, PRS_SCI_N=prs_sci_n,      &
+                     PRS_SCW_N=prs_scw_n, PRS_SDE_N=prs_sde_n,      &
+                     PRR_RCW_W=prr_rcw_w, PRR_WAU_W=prr_wau_w,      &
+                     PRV_REV_W=prv_rev_w, PRW_VCD_W=prw_vcd_w,      &
+                     PRW_IML_P=prw_iml_p, PRI_WHM_N=pri_whm_n,      &
+                     PRC_SED=prc_sed,     PRR_SED=prr_sed,          &
+                     PRI_SED=pri_sed,     PRS_SED=prs_sed,          &
+                     PRG_SED=prg_sed,                               &
+                     L_PRI_INU=l_pri_inu, L_PRI_IDE=l_pri_ide,      &
+                     L_PRS_IDE=l_prs_ide, L_PRS_SDE_B0=l_prs_sde_b0,      &
+                     L_PRG_GDE_B0=l_prg_gde_b0, L_PRI_IHA=l_pri_iha,      &
+                     L_PRI_WFZ=l_pri_wfz, L_PRI_RFZ=l_pri_rfz,      &
+                     L_PRG_RFZ=l_prg_rfz, L_PRS_SCW=l_prs_scw,      &
+                     L_PRG_SCW=l_prg_scw, L_PRG_GCW=l_prg_gcw,      &
+                     L_PRG_RCS=l_prg_rcs, L_PRS_RCS=l_prs_rcs,      &
+                     L_PRR_RCI=l_prr_rci, L_PRG_RCG=l_prg_rcg,      &
+                     L_PRR_SML=l_prr_sml, L_PRR_GML=l_prr_gml,      &
+                     L_PRR_RCG=l_prr_rcg, L_PRR_RCS=l_prr_rcs,      &
+                     L_PRS_SDE_A0=l_prs_sde_a0, L_PRG_GDE_A0=l_prg_gde_a0,      &
+                     L_PRW_VCD=l_prw_vcd, L_PRV_REV=l_prv_rev,      &
+                     L_XRI=l_xri, L_XRC=l_xrc,                      &
+# endif
 #if ( WRF_CHEM == 1 )
                      WETSCAV_ON=config_flags%wetscav_onoff == 1, &
                      RAINPROD=rainprod,                  &
@@ -1250,6 +1406,55 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRAUPELNC=GRAUPELNC,                &
                      GRAUPELNCV=GRAUPELNCV,              &
                      SR=SR,                              &
+# ifdef Pl_write
+                     PNI_IDE_N=pni_ide_n, PNI_IHA_N=pni_iha_n,      &
+                     PNI_IHM_N=pni_ihm_n, PNI_INU_N=pni_inu_n,      &
+                     PNI_RCI_N=pni_rci_n, PNI_RFZ_N=pni_rfz_n,      &
+                     PNI_SCI_N=pni_sci_n, PNI_WFZ_N=pni_wfz_n,      &
+                     PNR_GML_P=pnr_gml_p, PNR_RCG_P=pnr_rcg_p,      &
+                     PNR_RCG_N=pnr_rcg_n, PNR_RCI_N=pnr_rci_n,      &
+                     PNR_RCS_P=pnr_rcs_p, PNR_RCS_N=pnr_rcs_n,      &
+                     PNR_RFZ_N=pnr_rfz_n, PNR_SML_P=pnr_sml_p,      &
+                     PNC_GCW_W=pnc_gcw_w, PNC_RCW_W=pnc_rcw_w,      &
+                     PNC_SCW_W=pnc_scw_w, PNC_WAU_W=pnc_wau_w,      &
+                     PNC_WCD_W=pnc_wcd_w, PNR_RCR_W=pnr_rcr_w,      &
+                     PNR_REV_W=pnr_rev_w, PNR_WAU_W=pnr_wau_w,      &
+                     PNI_IAU_N=pni_iau_n, PRG_GCW_N=prg_gcw_n,      &
+                     PRG_GDE_N=prg_gde_n, PRG_IHM_N=prg_ihm_n,      &
+                     PRG_RCG_P=prg_rcg_p, PRG_RCG_N=prg_rcg_n,      &
+                     PRG_RCI_N=prg_rci_n, PRG_RCS_N=prg_rcs_n,      &
+                     PRG_RFZ_N=prg_rfz_n, PRG_SCW_N=prg_scw_n,      &
+                     PRI_IDE_N=pri_ide_n, PRI_IHA_N=pri_iha_n,      &
+                     PRI_IHM_N=pri_ihm_n, PRI_INU_N=pri_inu_n,      &
+                     PRI_RCI_N=pri_rci_n, PRI_RFZ_N=pri_rfz_n,      &
+                     PRI_WFZ_N=pri_wfz_n, PRR_GML_P=prr_gml_p,      &
+                     PRR_RCG_P=prr_rcg_p, PRR_RCG_N=prr_rcg_n,      &
+                     PRR_RCI_N=prr_rci_n, PRR_RCS_N=prr_rcs_n,      &
+                     PRR_SML_P=prr_sml_p, PRR_RCS_P=prr_rcs_p,      &
+                     PRS_IAU_N=prs_iau_n, PRS_IDE_N=prs_ide_n,      &
+                     PRS_IHM_N=prs_ihm_n, PRS_RCS_P=prs_rcs_p,      &
+                     PRS_RCS_N=prs_rcs_n, PRS_SCI_N=prs_sci_n,      &
+                     PRS_SCW_N=prs_scw_n, PRS_SDE_N=prs_sde_n,      &
+                     PRR_RCW_W=prr_rcw_w, PRR_WAU_W=prr_wau_w,      &
+                     PRV_REV_W=prv_rev_w, PRW_VCD_W=prw_vcd_w,      &
+                     PRW_IML_P=prw_iml_p, PRI_WHM_N=pri_whm_n,      &
+                     PRC_SED=prc_sed,     PRR_SED=prr_sed,          &
+                     PRI_SED=pri_sed,     PRS_SED=prs_sed,          &
+                     PRG_SED=prg_sed,                               &
+                     L_PRI_INU=l_pri_inu, L_PRI_IDE=l_pri_ide,      &
+                     L_PRS_IDE=l_prs_ide, L_PRS_SDE_B0=l_prs_sde_b0,      &
+                     L_PRG_GDE_B0=l_prg_gde_b0, L_PRI_IHA=l_pri_iha,      &
+                     L_PRI_WFZ=l_pri_wfz, L_PRI_RFZ=l_pri_rfz,      &
+                     L_PRG_RFZ=l_prg_rfz, L_PRS_SCW=l_prs_scw,      &
+                     L_PRG_SCW=l_prg_scw, L_PRG_GCW=l_prg_gcw,      &
+                     L_PRG_RCS=l_prg_rcs, L_PRS_RCS=l_prs_rcs,      &
+                     L_PRR_RCI=l_prr_rci, L_PRG_RCG=l_prg_rcg,      &
+                     L_PRR_SML=l_prr_sml, L_PRR_GML=l_prr_gml,      &
+                     L_PRR_RCG=l_prr_rcg, L_PRR_RCS=l_prr_rcs,      &
+                     L_PRS_SDE_A0=l_prs_sde_a0, L_PRG_GDE_A0=l_prg_gde_a0,      &
+                     L_PRW_VCD=l_prw_vcd, L_PRV_REV=l_prv_rev,      &
+                     L_XRI=l_xri, L_XRC=l_xrc,                      &
+# endif
 #if ( WRF_CHEM == 1 )
                      WETSCAV_ON=config_flags%wetscav_onoff == 1, &
                      RAINPROD=rainprod,                  &

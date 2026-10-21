@@ -1,3 +1,9 @@
+#define Pl_write
+! Pl_write : output Thompson process rates (p*) and phase-change heating (l_*).
+! Default  : snapshot of the current timestep (kg/kg/s, #/kg/s, K/s).
+! Pl_avg   : add "#define Pl_avg" below to instead accumulate rate*dt since
+!            itimestep 1 (kg/kg, #/kg, K). Interval mean over [t1,t2] is
+!            (F(t2)-F(t1))/(t2-t1). Accumulators are carried in restart files.
 !+---+-----------------------------------------------------------------+
 !.. This subroutine computes the moisture tendencies of water vapor,
 !.. cloud droplets, rain, cloud ice (pristine), snow, and graupel.
@@ -43,7 +49,6 @@
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
 !
-
 
       MODULE module_mp_thompson
 
@@ -1081,6 +1086,34 @@
                               refl_10cm, diagflag, ke_diag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
                               has_reqc, has_reqi, has_reqs,           &
+#ifdef Pl_write
+                          pni_ide_n, pni_iha_n, pni_ihm_n, &
+                          pni_inu_n, pni_rci_n, pni_rfz_n, pni_sci_n, &
+                          pni_wfz_n, pnr_gml_p, pnr_rcg_p, pnr_rcg_n, &
+                          pnr_rci_n, pnr_rcs_p, pnr_rcs_n, pnr_rfz_n, &
+                          pnr_sml_p, pnc_gcw_w, pnc_rcw_w, pnc_scw_w, &
+                          pnc_wau_w, pnc_wcd_w, pnr_rcr_w, pnr_rev_w, &
+                          pnr_wau_w, pni_iau_n,                       &
+                          prg_gcw_n, prg_gde_n, prg_ihm_n, prg_rcg_p, &
+                          prg_rcg_n, prg_rci_n, prg_rcs_n, prg_rfz_n, &
+                          prg_scw_n, pri_ide_n, pri_iha_n, pri_ihm_n, &
+                          pri_inu_n, pri_rci_n, pri_rfz_n, pri_wfz_n, &
+                          prr_gml_p, prr_rcg_p, prr_rcg_n, prr_rci_n, &
+                          prr_rcs_n, prr_sml_p, prr_rcs_p, prs_iau_n, &
+                          prs_ide_n, prs_ihm_n, prs_rcs_p, prs_rcs_n, &
+                          prs_sci_n, prs_scw_n, prs_sde_n, prr_rcw_w, &
+                          prr_wau_w, prv_rev_w, prw_vcd_w, prw_iml_p, &
+                          pri_whm_n,                                  &
+                          prc_sed, prr_sed, pri_sed, prs_sed, prg_sed,&
+                          l_pri_inu, l_pri_ide, l_prs_ide, l_prs_sde_b0, &
+                          l_prg_gde_b0, l_pri_iha, l_pri_wfz, l_pri_rfz, &
+                          l_prg_rfz, l_prs_scw, l_prg_scw, l_prg_gcw, &
+                          l_prg_rcs, l_prs_rcs, l_prr_rci, l_prg_rcg, &
+                          l_prr_sml, l_prr_gml, l_prr_rcg, l_prr_rcs, &
+                          l_prs_sde_a0, l_prg_gde_a0, &
+                          l_prw_vcd, l_prv_rev, &
+                          l_xri, l_xrc, &
+#endif
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
                               its,ite, jts,jte, kts,kte)               ! tile dims
@@ -1114,6 +1147,43 @@
                           refl_10cm
       REAL, INTENT(IN):: dt_in
       INTEGER, INTENT(IN):: itimestep
+#ifdef Pl_write
+      REAL, DIMENSION(kts:kte,1:67) :: mp_rates1d
+      INTEGER :: mpnum
+      REAL :: pl_keep, pl_scale
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) ::&
+                          pni_ide_n, pni_iha_n, pni_ihm_n, &
+                          pni_inu_n, pni_rci_n, pni_rfz_n, pni_sci_n, &
+                          pni_wfz_n, pnr_gml_p, pnr_rcg_p, pnr_rcg_n, &
+                          pnr_rci_n, pnr_rcs_p, pnr_rcs_n, pnr_rfz_n, &
+                          pnr_sml_p, pnc_gcw_w, pnc_rcw_w, pnc_scw_w, &
+                          pnc_wau_w, pnc_wcd_w, pnr_rcr_w, pnr_rev_w, &
+                          pnr_wau_w, pni_iau_n
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme),OPTIONAL,INTENT(INOUT) :: &
+                          prg_gcw_n, prg_gde_n, prg_ihm_n, prg_rcg_p, &
+                          prg_rcg_n, prg_rci_n, prg_rcs_n, prg_rfz_n, &
+                          prg_scw_n, pri_ide_n, pri_iha_n, pri_ihm_n, &
+                          pri_inu_n, pri_rci_n, pri_rfz_n, pri_wfz_n, &
+                          prr_gml_p, prr_rcg_p, prr_rcg_n, prr_rci_n, &
+                          prr_rcs_n, prr_sml_p, prr_rcs_p, prs_iau_n, &
+                          prs_ide_n, prs_ihm_n, prs_rcs_p, prs_rcs_n, &
+                          prs_sci_n, prs_scw_n, prs_sde_n, prr_rcw_w, &
+                          prr_wau_w, prv_rev_w, prw_vcd_w, prw_iml_p, &
+                          pri_whm_n
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme),OPTIONAL,INTENT(INOUT) :: &
+                          prc_sed, prr_sed, pri_sed, prs_sed, prg_sed
+!JK
+      REAL, DIMENSION(kts:kte,1:26) :: l_rates1d
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) ::&
+                          l_pri_inu, l_pri_ide, l_prs_ide, l_prs_sde_b0, &
+                          l_prg_gde_b0, l_pri_iha, l_pri_wfz, l_pri_rfz, &
+                          l_prg_rfz, l_prs_scw, l_prg_scw, l_prg_gcw, &
+                          l_prg_rcs, l_prs_rcs, l_prr_rci, l_prg_rcg, &
+                          l_prr_sml, l_prr_gml, l_prr_rcg, l_prr_rcs, &
+                          l_prs_sde_a0, l_prg_gde_a0, &
+                          l_prw_vcd, l_prv_rev, &
+                          l_xri, l_xrc
+#endif
       INTEGER, OPTIONAL, INTENT(IN):: aer_init_opt, wif_input_opt
 #if ( WRF_CHEM == 1 )
       LOGICAL, INTENT(in) :: wetscav_on
@@ -1147,6 +1217,109 @@
       integer :: kediagloc
 
 !+---+
+#ifdef Pl_write
+      if(itimestep .eq. 1) then
+        do j = jms,jme
+          do k = kms,kme
+            do i = ims,ime
+            pni_iau_n(i,k,j) = 0.
+            pni_ide_n(i,k,j) = 0.
+            pni_iha_n(i,k,j) = 0.
+            pni_ihm_n(i,k,j) = 0.
+            pni_inu_n(i,k,j) = 0.
+            pni_rci_n(i,k,j) = 0.
+            pni_rfz_n(i,k,j) = 0.
+            pni_sci_n(i,k,j) = 0.
+            pni_wfz_n(i,k,j) = 0.
+            pnr_gml_p(i,k,j) = 0.
+            pnr_rcg_p(i,k,j) = 0.
+            pnr_rcg_n(i,k,j) = 0.
+            pnr_rci_n(i,k,j) = 0.
+            pnr_rcs_p(i,k,j) = 0.
+            pnr_rcs_n(i,k,j) = 0.
+            pnr_rfz_n(i,k,j) = 0.
+            pnr_sml_p(i,k,j) = 0.
+            pnc_gcw_w(i,k,j) = 0.
+            pnc_rcw_w(i,k,j) = 0.
+            pnc_scw_w(i,k,j) = 0.
+            pnc_wau_w(i,k,j) = 0.
+            pnc_wcd_w(i,k,j) = 0.
+            pnr_rcr_w(i,k,j) = 0.
+            pnr_rev_w(i,k,j) = 0.
+            pnr_wau_w(i,k,j) = 0.
+            prg_gcw_n(i,k,j) = 0.
+            prg_gde_n(i,k,j) = 0.
+            prg_ihm_n(i,k,j) = 0.
+            prg_rcg_p(i,k,j) = 0.
+            prg_rcg_n(i,k,j) = 0.
+            prg_rci_n(i,k,j) = 0.
+            prg_rcs_n(i,k,j) = 0.
+            prg_rfz_n(i,k,j) = 0.
+            prg_scw_n(i,k,j) = 0.
+            pri_ide_n(i,k,j) = 0.
+            pri_iha_n(i,k,j) = 0.
+            pri_ihm_n(i,k,j) = 0.
+            pri_inu_n(i,k,j) = 0.
+            pri_rci_n(i,k,j) = 0.
+            pri_rfz_n(i,k,j) = 0.
+            pri_wfz_n(i,k,j) = 0.
+            prr_gml_p(i,k,j) = 0.
+            prr_rcg_p(i,k,j) = 0.
+            prr_rcg_n(i,k,j) = 0.
+            prr_rci_n(i,k,j) = 0.
+            prr_rcs_p(i,k,j) = 0.
+            prr_sml_p(i,k,j) = 0.
+            prr_rcs_n(i,k,j) = 0.
+            prs_iau_n(i,k,j) = 0.
+            prs_ide_n(i,k,j) = 0.
+            prs_ihm_n(i,k,j) = 0.
+            prs_rcs_p(i,k,j) = 0.
+            prs_rcs_n(i,k,j) = 0.
+            prs_sci_n(i,k,j) = 0.
+            prs_scw_n(i,k,j) = 0.
+            prs_sde_n(i,k,j) = 0.
+            prr_rcw_w(i,k,j) = 0.
+            prr_wau_w(i,k,j) = 0.
+            prv_rev_w(i,k,j) = 0.
+            prw_vcd_w(i,k,j) = 0.
+            prw_iml_p(i,k,j) = 0.
+            pri_whm_n(i,k,j) = 0.
+            prc_sed(i,k,j) = 0.
+            prr_sed(i,k,j) = 0.
+            pri_sed(i,k,j) = 0.
+            prs_sed(i,k,j) = 0.
+            prg_sed(i,k,j) = 0.
+            l_pri_inu(i,k,j) = 0.
+            l_pri_ide(i,k,j) = 0.
+            l_prs_ide(i,k,j) = 0.
+            l_prs_sde_b0(i,k,j) = 0.
+            l_prg_gde_b0(i,k,j) = 0.
+            l_pri_iha(i,k,j) = 0.
+            l_pri_wfz(i,k,j) = 0.
+            l_pri_rfz(i,k,j) = 0.
+            l_prg_rfz(i,k,j) = 0.
+            l_prs_scw(i,k,j) = 0.
+            l_prg_scw(i,k,j) = 0.
+            l_prg_gcw(i,k,j) = 0.
+            l_prg_rcs(i,k,j) = 0.
+            l_prs_rcs(i,k,j) = 0.
+            l_prr_rci(i,k,j) = 0.
+            l_prg_rcg(i,k,j) = 0.
+            l_prr_sml(i,k,j) = 0.
+            l_prr_gml(i,k,j) = 0.
+            l_prr_rcg(i,k,j) = 0.
+            l_prr_rcs(i,k,j) = 0.
+            l_prs_sde_a0(i,k,j) = 0.
+            l_prg_gde_a0(i,k,j) = 0.
+            l_prw_vcd(i,k,j) = 0.
+            l_prv_rev(i,k,j) = 0.
+            l_xri(i,k,j) = 0.
+            l_xrc(i,k,j) = 0.
+            enddo
+          enddo
+        enddo
+      endif
+#endif
 
       i_start = its
       j_start = jts
@@ -1163,6 +1336,15 @@
 !     endif
 
       dt = dt_in
+#ifdef Pl_write
+#ifdef Pl_avg
+      pl_keep  = 1.0
+      pl_scale = dt_in
+#else
+      pl_keep  = 0.0
+      pl_scale = 1.0
+#endif
+#endif
    
       qc_max = 0.
       qr_max = 0.
@@ -1282,12 +1464,20 @@
             enddo
          endif
 
+#ifdef Pl_write
+         mp_rates1d=0.
+          l_rates1d=0.
+#endif
          call mp_thompson(aer_init_opt, wif_input_opt, &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, qb1d, ni1d,     &
                           nr1d, nc1d, ng1d, nwfa1d, nifa1d, nbca1d, t1d, p1d, w1d, dz1d,  &
                       pptrain, pptsnow, pptgraul, pptice, &
 #if ( WRF_CHEM == 1 )
                       wetscav_on, rainprod1d, evapprod1d, &
+#endif
+#ifdef Pl_write
+                          mp_rates1d,                                &
+                           l_rates1d,                                &
 #endif
                       kts, kte, dt, i, j)
 
@@ -1446,6 +1636,117 @@
             endif
          enddo
 
+#ifdef Pl_write
+        do k = kts, kte
+! positive temperature
+           pnr_gml_p(i,k,j)=pl_keep*pnr_gml_p(i,k,j)+pl_scale*mp_rates1d(k,10)
+           pnr_rcg_p(i,k,j)=pl_keep*pnr_rcg_p(i,k,j)+pl_scale*mp_rates1d(k,11)
+           pnr_rcs_p(i,k,j)=pl_keep*pnr_rcs_p(i,k,j)+pl_scale*mp_rates1d(k,14)
+           pnr_sml_p(i,k,j)=pl_keep*pnr_sml_p(i,k,j)+pl_scale*mp_rates1d(k,17)
+           prg_rcg_p(i,k,j)=pl_keep*prg_rcg_p(i,k,j)+pl_scale*mp_rates1d(k,21)
+           prr_gml_p(i,k,j)=pl_keep*prr_gml_p(i,k,j)+pl_scale*mp_rates1d(k,34)
+           prr_rcg_p(i,k,j)=pl_keep*prr_rcg_p(i,k,j)+pl_scale*mp_rates1d(k,35)
+           prr_sml_p(i,k,j)=pl_keep*prr_sml_p(i,k,j)+pl_scale*mp_rates1d(k,39)
+           prr_rcs_p(i,k,j)=pl_keep*prr_rcs_p(i,k,j)+pl_scale*mp_rates1d(k,40)
+           prs_rcs_p(i,k,j)=pl_keep*prs_rcs_p(i,k,j)+pl_scale*mp_rates1d(k,44)
+           prw_iml_p(i,k,j)=pl_keep*prw_iml_p(i,k,j)+pl_scale*mp_rates1d(k,61)
+! negative temperature
+           pni_iau_n(i,k,j)=pl_keep*pni_iau_n(i,k,j)+pl_scale*mp_rates1d(k,1)
+           pni_ide_n(i,k,j)=pl_keep*pni_ide_n(i,k,j)+pl_scale*mp_rates1d(k,2)
+           pni_iha_n(i,k,j)=pl_keep*pni_iha_n(i,k,j)+pl_scale*mp_rates1d(k,3)
+           pni_ihm_n(i,k,j)=pl_keep*pni_ihm_n(i,k,j)+pl_scale*mp_rates1d(k,4)
+           pni_inu_n(i,k,j)=pl_keep*pni_inu_n(i,k,j)+pl_scale*mp_rates1d(k,5)
+           pni_rci_n(i,k,j)=pl_keep*pni_rci_n(i,k,j)+pl_scale*mp_rates1d(k,6)
+           pni_rfz_n(i,k,j)=pl_keep*pni_rfz_n(i,k,j)+pl_scale*mp_rates1d(k,7)
+           pni_sci_n(i,k,j)=pl_keep*pni_sci_n(i,k,j)+pl_scale*mp_rates1d(k,8)
+           pni_wfz_n(i,k,j)=pl_keep*pni_wfz_n(i,k,j)+pl_scale*mp_rates1d(k,9)
+           pnr_rcg_n(i,k,j)=pl_keep*pnr_rcg_n(i,k,j)+pl_scale*mp_rates1d(k,12)
+           pnr_rci_n(i,k,j)=pl_keep*pnr_rci_n(i,k,j)+pl_scale*mp_rates1d(k,13)
+           pnr_rcs_n(i,k,j)=pl_keep*pnr_rcs_n(i,k,j)+pl_scale*mp_rates1d(k,15)
+           pnr_rfz_n(i,k,j)=pl_keep*pnr_rfz_n(i,k,j)+pl_scale*mp_rates1d(k,16)
+           prg_gcw_n(i,k,j)=pl_keep*prg_gcw_n(i,k,j)+pl_scale*mp_rates1d(k,18)
+           prg_gde_n(i,k,j)=pl_keep*prg_gde_n(i,k,j)+pl_scale*mp_rates1d(k,19)
+           prg_ihm_n(i,k,j)=pl_keep*prg_ihm_n(i,k,j)+pl_scale*mp_rates1d(k,20)
+           prg_rcg_n(i,k,j)=pl_keep*prg_rcg_n(i,k,j)+pl_scale*mp_rates1d(k,22)
+           prg_rci_n(i,k,j)=pl_keep*prg_rci_n(i,k,j)+pl_scale*mp_rates1d(k,23)
+           prg_rcs_n(i,k,j)=pl_keep*prg_rcs_n(i,k,j)+pl_scale*mp_rates1d(k,24)
+           prg_rfz_n(i,k,j)=pl_keep*prg_rfz_n(i,k,j)+pl_scale*mp_rates1d(k,25)
+           prg_scw_n(i,k,j)=pl_keep*prg_scw_n(i,k,j)+pl_scale*mp_rates1d(k,26)
+           pri_ide_n(i,k,j)=pl_keep*pri_ide_n(i,k,j)+pl_scale*mp_rates1d(k,27)
+           pri_iha_n(i,k,j)=pl_keep*pri_iha_n(i,k,j)+pl_scale*mp_rates1d(k,28)
+           pri_ihm_n(i,k,j)=pl_keep*pri_ihm_n(i,k,j)+pl_scale*mp_rates1d(k,29)
+           pri_inu_n(i,k,j)=pl_keep*pri_inu_n(i,k,j)+pl_scale*mp_rates1d(k,30)
+           pri_rci_n(i,k,j)=pl_keep*pri_rci_n(i,k,j)+pl_scale*mp_rates1d(k,31)
+           pri_rfz_n(i,k,j)=pl_keep*pri_rfz_n(i,k,j)+pl_scale*mp_rates1d(k,32)
+           pri_wfz_n(i,k,j)=pl_keep*pri_wfz_n(i,k,j)+pl_scale*mp_rates1d(k,33)
+           prr_rcg_n(i,k,j)=pl_keep*prr_rcg_n(i,k,j)+pl_scale*mp_rates1d(k,36)
+           prr_rci_n(i,k,j)=pl_keep*prr_rci_n(i,k,j)+pl_scale*mp_rates1d(k,37)
+           prr_rcs_n(i,k,j)=pl_keep*prr_rcs_n(i,k,j)+pl_scale*mp_rates1d(k,38)
+           prs_iau_n(i,k,j)=pl_keep*prs_iau_n(i,k,j)+pl_scale*mp_rates1d(k,41)
+           prs_ide_n(i,k,j)=pl_keep*prs_ide_n(i,k,j)+pl_scale*mp_rates1d(k,42)
+           prs_ihm_n(i,k,j)=pl_keep*prs_ihm_n(i,k,j)+pl_scale*mp_rates1d(k,43)
+           prs_rcs_n(i,k,j)=pl_keep*prs_rcs_n(i,k,j)+pl_scale*mp_rates1d(k,45)
+           prs_sci_n(i,k,j)=pl_keep*prs_sci_n(i,k,j)+pl_scale*mp_rates1d(k,46)
+           prs_scw_n(i,k,j)=pl_keep*prs_scw_n(i,k,j)+pl_scale*mp_rates1d(k,47)
+           prs_sde_n(i,k,j)=pl_keep*prs_sde_n(i,k,j)+pl_scale*mp_rates1d(k,48)
+           pri_whm_n(i,k,j)=pl_keep*pri_whm_n(i,k,j)+pl_scale*mp_rates1d(k,62)
+!else
+           pnc_gcw_w(i,k,j)=pl_keep*pnc_gcw_w(i,k,j)+pl_scale*mp_rates1d(k,49)
+           pnc_rcw_w(i,k,j)=pl_keep*pnc_rcw_w(i,k,j)+pl_scale*mp_rates1d(k,50)
+           pnc_scw_w(i,k,j)=pl_keep*pnc_scw_w(i,k,j)+pl_scale*mp_rates1d(k,51)
+           pnc_wau_w(i,k,j)=pl_keep*pnc_wau_w(i,k,j)+pl_scale*mp_rates1d(k,52)
+           pnc_wcd_w(i,k,j)=pl_keep*pnc_wcd_w(i,k,j)+pl_scale*mp_rates1d(k,53)
+           pnr_rcr_w(i,k,j)=pl_keep*pnr_rcr_w(i,k,j)+pl_scale*mp_rates1d(k,54)
+           pnr_rev_w(i,k,j)=pl_keep*pnr_rev_w(i,k,j)+pl_scale*mp_rates1d(k,55)
+           pnr_wau_w(i,k,j)=pl_keep*pnr_wau_w(i,k,j)+pl_scale*mp_rates1d(k,56)
+           prr_rcw_w(i,k,j)=pl_keep*prr_rcw_w(i,k,j)+pl_scale*mp_rates1d(k,57)
+           prr_wau_w(i,k,j)=pl_keep*prr_wau_w(i,k,j)+pl_scale*mp_rates1d(k,58)
+           prv_rev_w(i,k,j)=pl_keep*prv_rev_w(i,k,j)+pl_scale*mp_rates1d(k,59)
+           prw_vcd_w(i,k,j)=pl_keep*prw_vcd_w(i,k,j)+pl_scale*mp_rates1d(k,60)
+!sedimentation
+           prc_sed(i,k,j)=pl_keep*prc_sed(i,k,j)+pl_scale*mp_rates1d(k,63)
+           prr_sed(i,k,j)=pl_keep*prr_sed(i,k,j)+pl_scale*mp_rates1d(k,64)
+           pri_sed(i,k,j)=pl_keep*pri_sed(i,k,j)+pl_scale*mp_rates1d(k,65)
+           prs_sed(i,k,j)=pl_keep*prs_sed(i,k,j)+pl_scale*mp_rates1d(k,66)
+           prg_sed(i,k,j)=pl_keep*prg_sed(i,k,j)+pl_scale*mp_rates1d(k,67)
+!JK
+!deposition/nucleation growth onto ice
+           l_pri_inu(i,k,j)=pl_keep*l_pri_inu(i,k,j)+pl_scale*l_rates1d(k,1)
+           l_pri_ide(i,k,j)=pl_keep*l_pri_ide(i,k,j)+pl_scale*l_rates1d(k,2)
+           l_prs_ide(i,k,j)=pl_keep*l_prs_ide(i,k,j)+pl_scale*l_rates1d(k,3)
+           l_prs_sde_b0(i,k,j)=pl_keep*l_prs_sde_b0(i,k,j)+pl_scale*l_rates1d(k,4)
+           l_prg_gde_b0(i,k,j)=pl_keep*l_prg_gde_b0(i,k,j)+pl_scale*l_rates1d(k,5)
+           l_pri_iha(i,k,j)=pl_keep*l_pri_iha(i,k,j)+pl_scale*l_rates1d(k,6)
+!freezing, riming-related conversion
+           l_pri_wfz(i,k,j)=pl_keep*l_pri_wfz(i,k,j)+pl_scale*l_rates1d(k,7)
+           l_pri_rfz(i,k,j)=pl_keep*l_pri_rfz(i,k,j)+pl_scale*l_rates1d(k,8)
+           l_prg_rfz(i,k,j)=pl_keep*l_prg_rfz(i,k,j)+pl_scale*l_rates1d(k,9)
+           l_prs_scw(i,k,j)=pl_keep*l_prs_scw(i,k,j)+pl_scale*l_rates1d(k,10)
+           l_prg_scw(i,k,j)=pl_keep*l_prg_scw(i,k,j)+pl_scale*l_rates1d(k,11)
+           l_prg_gcw(i,k,j)=pl_keep*l_prg_gcw(i,k,j)+pl_scale*l_rates1d(k,12)
+           l_prg_rcs(i,k,j)=pl_keep*l_prg_rcs(i,k,j)+pl_scale*l_rates1d(k,13)
+           l_prs_rcs(i,k,j)=pl_keep*l_prs_rcs(i,k,j)+pl_scale*l_rates1d(k,14)
+           l_prr_rci(i,k,j)=pl_keep*l_prr_rci(i,k,j)+pl_scale*l_rates1d(k,15)
+           l_prg_rcg(i,k,j)=pl_keep*l_prg_rcg(i,k,j)+pl_scale*l_rates1d(k,16)
+!snow/graupel melting, rain-category conversion(melting/collection)
+           l_prr_sml(i,k,j)=pl_keep*l_prr_sml(i,k,j)+pl_scale*l_rates1d(k,17)
+           l_prr_gml(i,k,j)=pl_keep*l_prr_gml(i,k,j)+pl_scale*l_rates1d(k,18)
+           l_prr_rcg(i,k,j)=pl_keep*l_prr_rcg(i,k,j)+pl_scale*l_rates1d(k,19)
+           l_prr_rcs(i,k,j)=pl_keep*l_prr_rcs(i,k,j)+pl_scale*l_rates1d(k,20)
+!deposition/sublimation for supersatureated snow/graupel
+           l_prs_sde_a0(i,k,j)=pl_keep*l_prs_sde_a0(i,k,j)+pl_scale*l_rates1d(k,21)
+           l_prg_gde_a0(i,k,j)=pl_keep*l_prg_gde_a0(i,k,j)+pl_scale*l_rates1d(k,22)
+!cloud water condensation/evaporation
+           l_prw_vcd(i,k,j)=pl_keep*l_prw_vcd(i,k,j)+pl_scale*l_rates1d(k,23)
+!rain evaporation
+           l_prv_rev(i,k,j)=pl_keep*l_prv_rev(i,k,j)+pl_scale*l_rates1d(k,24)
+!ice melting above 0 deg
+           l_xri(i,k,j)=pl_keep*l_xri(i,k,j)+pl_scale*l_rates1d(k,25)
+!cloud water freezing below HGFR
+           l_xrc(i,k,j)=pl_keep*l_xrc(i,k,j)+pl_scale*l_rates1d(k,26)
+        enddo
+#endif
+
          IF ( PRESENT (diagflag) ) THEN
          if (diagflag .and. do_radar_ref == 1) then
           
@@ -1518,6 +1819,10 @@
 #if ( WRF_CHEM == 1 )
                           wetscav_on, rainprod, evapprod, &
 #endif
+#ifdef Pl_write
+                          mp_rates3d,                                   &
+                           l_rates3d,                                   &
+#endif
                           kts, kte, dt, ii, jj)
 
       implicit none
@@ -1536,12 +1841,21 @@
                           rainprod, evapprod
       LOGICAL, INTENT(IN) :: wetscav_on
 #endif
+#ifdef Pl_write
+      REAL, DIMENSION(kts:kte,1:67) :: mp_rates3d
+      REAL, DIMENSION(kts:kte,1:26) ::  l_rates3d
+#endif
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: tten, qvten, qcten, qiten, qrten,            &
            qsten, qgten, qbten, niten, nrten, ncten, ngten, nwfaten, nifaten, &
                                                               nbcaten
 
+#ifdef Pl_write
+     real, dimension(kts:kte)   :: qci_tmp, ncc_tmp
+     real, dimension(kts:kte)   :: qqr_tmp, nnr_tmp
+     real, dimension(kts:kte,2) :: qrs_tmp
+#endif
       DOUBLE PRECISION, DIMENSION(kts:kte):: prw_vcd
 
       DOUBLE PRECISION, DIMENSION(kts:kte):: pnc_wcd, pnc_wau, pnc_rcw, &
@@ -2958,6 +3272,74 @@
       do k = kts, kte
          orho = 1./rho(k)
          lfus2 = lsub - lvap(k)
+#ifdef Pl_write
+! Pl_write option
+      if (temp(k).lt.T_0) then
+
+      mp_rates3d(k,1) = pni_iau(k)*orho
+      mp_rates3d(k,2) = pni_ide(k)*orho
+      mp_rates3d(k,3) = pni_iha(k)*orho
+      mp_rates3d(k,4) = pni_ihm(k)*orho
+      mp_rates3d(k,5) = pni_inu(k)*orho
+      mp_rates3d(k,6) = pni_rci(k)*orho
+      mp_rates3d(k,7) = pni_rfz(k)*orho
+      mp_rates3d(k,8) = pni_sci(k)*orho
+      mp_rates3d(k,9) = pni_wfz(k)*orho
+      mp_rates3d(k,12) = pnr_rcg(k)*orho
+      mp_rates3d(k,13) = pnr_rci(k)*orho
+      mp_rates3d(k,15) = pnr_rcs(k)*orho
+      mp_rates3d(k,16) = pnr_rfz(k)*orho
+      mp_rates3d(k,18) = prg_gcw(k)*orho
+      mp_rates3d(k,19) = prg_gde(k)*orho
+      mp_rates3d(k,20) = prg_ihm(k)*orho
+      mp_rates3d(k,22) = prg_rcg(k)*orho
+      mp_rates3d(k,23) = prg_rci(k)*orho
+      mp_rates3d(k,24) = prg_rcs(k)*orho
+      mp_rates3d(k,25) = prg_rfz(k)*orho
+      mp_rates3d(k,26) = prg_scw(k)*orho
+      mp_rates3d(k,27) = pri_ide(k)*orho
+      mp_rates3d(k,28) = pri_iha(k)*orho
+      mp_rates3d(k,29) = pri_ihm(k)*orho
+      mp_rates3d(k,30) = pri_inu(k)*orho
+      mp_rates3d(k,31) = pri_rci(k)*orho
+      mp_rates3d(k,32) = pri_rfz(k)*orho
+      mp_rates3d(k,33) = pri_wfz(k)*orho
+      mp_rates3d(k,36) = prr_rcg(k)*orho
+      mp_rates3d(k,37) = prr_rci(k)*orho
+      mp_rates3d(k,38) = prr_rcs(k)*orho
+      mp_rates3d(k,41) = prs_iau(k)*orho
+      mp_rates3d(k,42) = prs_ide(k)*orho
+      mp_rates3d(k,43) = prs_ihm(k)*orho
+      mp_rates3d(k,45) = prs_rcs(k)*orho
+      mp_rates3d(k,46) = prs_sci(k)*orho
+      mp_rates3d(k,47) = prs_scw(k)*orho
+      mp_rates3d(k,48) = prs_sde(k)*orho
+
+      else
+
+      mp_rates3d(k,10) = pnr_gml(k)*orho
+      mp_rates3d(k,11) = pnr_rcg(k)*orho
+      mp_rates3d(k,14) = pnr_rcs(k)*orho
+      mp_rates3d(k,17) = pnr_sml(k)*orho
+      mp_rates3d(k,21) = prg_rcg(k)*orho
+      mp_rates3d(k,34) = prr_gml(k)*orho
+      mp_rates3d(k,35) = prr_rcg(k)*orho
+      mp_rates3d(k,39) = prr_sml(k)*orho
+      mp_rates3d(k,40) = prr_rcs(k)*orho
+      mp_rates3d(k,44) = prs_rcs(k)*orho
+
+      end if
+
+      mp_rates3d(k,49) = pnc_gcw(k)*orho
+      mp_rates3d(k,50) = pnc_rcw(k)*orho
+      mp_rates3d(k,51) = pnc_scw(k)*orho
+      mp_rates3d(k,52) = pnc_wau(k)*orho
+      mp_rates3d(k,54) = pnr_rcr(k)*orho
+      mp_rates3d(k,56) = pnr_wau(k)*orho
+      mp_rates3d(k,57) = prr_rcw(k)*orho
+      mp_rates3d(k,58) = prr_wau(k)*orho
+      
+#endif
 
 !..Aerosol number tendency
          if (is_aerosol_aware) then
@@ -3179,6 +3561,41 @@
                       + lsub*ocp(k)*(prs_sde(k) + prg_gde(k)) &
                        )*orho * (1-IFDRY)
          endif
+
+#ifdef Pl_write
+! Pl_write option
+      if (temp(k).lt.T_0) then
+
+      l_rates3d(k,1) = lsub*ocp(k)*pri_inu(k)*orho*(1-IFDRY)
+      l_rates3d(k,2) = lsub*ocp(k)*pri_ide(k)*orho*(1-IFDRY)
+      l_rates3d(k,3) = lsub*ocp(k)*prs_ide(k)*orho*(1-IFDRY)
+      l_rates3d(k,4) = lsub*ocp(k)*prs_sde(k)*orho*(1-IFDRY)
+      l_rates3d(k,5) = lsub*ocp(k)*prg_gde(k)*orho*(1-IFDRY)
+      l_rates3d(k,6) = lsub*ocp(k)*pri_iha(k)*orho*(1-IFDRY)
+
+      l_rates3d(k,7) = lfus2*ocp(k)*pri_wfz(k)*orho*(1-IFDRY)
+      l_rates3d(k,8) = lfus2*ocp(k)*pri_rfz(k)*orho*(1-IFDRY)
+      l_rates3d(k,9) = lfus2*ocp(k)*prg_rfz(k)*orho*(1-IFDRY)
+      l_rates3d(k,10) = lfus2*ocp(k)*prs_scw(k)*orho*(1-IFDRY)
+      l_rates3d(k,11) = lfus2*ocp(k)*prg_scw(k)*orho*(1-IFDRY)
+      l_rates3d(k,12) = lfus2*ocp(k)*prg_gcw(k)*orho*(1-IFDRY)
+      l_rates3d(k,13) = lfus2*ocp(k)*prg_rcs(k)*orho*(1-IFDRY)
+      l_rates3d(k,14) = lfus2*ocp(k)*prs_rcs(k)*orho*(1-IFDRY)
+      l_rates3d(k,15) = lfus2*ocp(k)*prr_rci(k)*orho*(1-IFDRY)
+      l_rates3d(k,16) = lfus2*ocp(k)*prg_rcg(k)*orho*(1-IFDRY)
+
+      else
+
+      l_rates3d(k,17) = -1.*lfus*ocp(k)*prr_sml(k)*orho*(1-IFDRY)
+      l_rates3d(k,18) = -1.*lfus*ocp(k)*prr_gml(k)*orho*(1-IFDRY)
+      l_rates3d(k,19) = -1.*lfus*ocp(k)*prr_rcg(k)*orho*(1-IFDRY)
+      l_rates3d(k,20) = -1.*lfus*ocp(k)*prr_rcs(k)*orho*(1-IFDRY)
+
+      l_rates3d(k,21) = lsub*ocp(k)*prs_sde(k)*orho*(1-IFDRY)
+      l_rates3d(k,22) = lsub*ocp(k)*prg_gde(k)*orho*(1-IFDRY)
+
+      endif
+#endif
 
       enddo
 
@@ -3476,11 +3893,19 @@
 
 !+---+-----------------------------------------------------------------+
 
+#ifdef Pl_write
+      mp_rates3d(k,60) = prw_vcd(k)
+      mp_rates3d(k,53) = pnc_wcd(k)
+#endif
           qvten(k) = qvten(k) - prw_vcd(k)
           qcten(k) = qcten(k) + prw_vcd(k)
           ncten(k) = ncten(k) + pnc_wcd(k)
           nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
+
+#ifdef Pl_write
+      l_rates3d(k,23) = lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY) 
+#endif
           rc(k) = MAX(R1, (qc1d(k) + DT*qcten(k))*rho(k))
           if (rc(k).eq.R1) L_qc(k) = .false.
           nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
@@ -3559,12 +3984,18 @@
           pnr_rev(k) = MIN(DBLE(nr(k)*0.99*orho*odts),                  &   ! RAIN2M
                        prv_rev(k) * nr(k)/rr(k))
 
+#ifdef Pl_write
+      mp_rates3d(k,55) = pnr_rev(k)
+      mp_rates3d(k,59) = prv_rev(k)
+#endif
           qrten(k) = qrten(k) - prv_rev(k)
           qvten(k) = qvten(k) + prv_rev(k)
           nrten(k) = nrten(k) - pnr_rev(k)
           nwfaten(k) = nwfaten(k) + pnr_rev(k)
           tten(k) = tten(k) - lvap(k)*ocp(k)*prv_rev(k)*(1-IFDRY)
-
+#ifdef Pl_write
+      l_rates3d(k,24) = -1.*lvap(k)*ocp(k)*prv_rev(k)*(1-IFDRY)
+#endif
           rr(k) = MAX(R1, (qr1d(k) + DT*qrten(k))*rho(k))
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           nr(k) = MAX(R2, (nr1d(k) + DT*nrten(k))*rho(k))
@@ -3801,6 +4232,9 @@
          nrten(k) = nrten(k) - sed_n(k)*odzq*onstep(1)*orho
          rr(k) = MAX(R1, rr(k) - sed_r(k)*odzq*DT*onstep(1))
          nr(k) = MAX(R2, nr(k) - sed_n(k)*odzq*DT*onstep(1))
+#ifdef Pl_write
+            mp_rates3d(k,64)=mp_rates3d(k,64)-sed_r(k)*odzq*onstep(1)*orho
+#endif
          do k = ksed1(1), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
@@ -3812,6 +4246,9 @@
                                            *odzq*DT*onstep(1))
             nr(k) = MAX(R2, nr(k) + (sed_n(k+1)-sed_n(k)) &
                                            *odzq*DT*onstep(1))
+#ifdef Pl_write
+            mp_rates3d(k,64)=mp_rates3d(k,64)+(sed_r(k+1)-sed_r(k))*odzq*onstep(1)*orho
+#endif
          enddo
 
          if (rr(kts).gt.R1*1000.) &
@@ -3833,6 +4270,9 @@
          ncten(k) = ncten(k) + (sed_n(k+1)-sed_n(k)) *odzq*orho
          rc(k) = MAX(R1, rc(k) + (sed_c(k+1)-sed_c(k)) *odzq*DT)
          nc(k) = MAX(10., nc(k) + (sed_n(k+1)-sed_n(k)) *odzq*DT)
+#ifdef Pl_write
+            mp_rates3d(k,63)=(sed_c(k+1)-sed_c(k))*odzq*orho
+#endif
       enddo
       endif
 
@@ -3852,6 +4292,9 @@
          niten(k) = niten(k) - sed_n(k)*odzq*onstep(2)*orho
          ri(k) = MAX(R1, ri(k) - sed_i(k)*odzq*DT*onstep(2))
          ni(k) = MAX(R2, ni(k) - sed_n(k)*odzq*DT*onstep(2))
+#ifdef Pl_write
+            mp_rates3d(k,65)=mp_rates3d(k,65)-sed_i(k)*odzq*onstep(2)*orho
+#endif
          do k = ksed1(2), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
@@ -3863,6 +4306,9 @@
                                            *odzq*DT*onstep(2))
             ni(k) = MAX(R2, ni(k) + (sed_n(k+1)-sed_n(k)) &
                                            *odzq*DT*onstep(2))
+#ifdef Pl_write
+            mp_rates3d(k,65)=mp_rates3d(k,65)+(sed_i(k+1)-sed_i(k))*odzq*onstep(2)*orho
+#endif
          enddo
 
          if (ri(kts).gt.R1*1000.) &
@@ -3883,6 +4329,9 @@
          orho = 1./rho(k)
          qsten(k) = qsten(k) - sed_s(k)*odzq*onstep(3)*orho
          rs(k) = MAX(R1, rs(k) - sed_s(k)*odzq*DT*onstep(3))
+#ifdef Pl_write
+            mp_rates3d(k,66)=mp_rates3d(k,66)-sed_s(k)*odzq*onstep(3)*orho
+#endif
          do k = ksed1(3), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
@@ -3890,6 +4339,9 @@
                                                *odzq*onstep(3)*orho
             rs(k) = MAX(R1, rs(k) + (sed_s(k+1)-sed_s(k)) &
                                            *odzq*DT*onstep(3))
+#ifdef Pl_write
+            mp_rates3d(k,66)=mp_rates3d(k,66)+(sed_s(k+1)-sed_s(k))*odzq*onstep(3)*orho
+#endif
          enddo
 
          if (rs(kts).gt.R1*1000.) &
@@ -3916,6 +4368,9 @@
          rg(k) = MAX(R1, rg(k) - sed_g(k)*odzq*DT*onstep(4))
          ng(k) = MAX(R2, ng(k) - sed_n(k)*odzq*DT*onstep(4))
          rb(k) = MAX(R1/rho(k)/rho_g(NRHG), rb(k) - sed_b(k)*odzq*DT*onstep(4))
+#ifdef Pl_write
+            mp_rates3d(k,67)=mp_rates3d(k,67)-sed_g(k)*odzq*onstep(4)*orho
+#endif
          do k = ksed1(4), kts, -1
             odzq = 1./dzq(k)
             orho = 1./rho(k)
@@ -3931,6 +4386,9 @@
                                            *odzq*DT*onstep(4))
             rb(k) = MAX(rg(k)/rho(k)/rho_g(NRHG), rb(k) + (sed_b(k+1)-sed_b(k))  &
                                            *odzq*DT*onstep(4))
+#ifdef Pl_write
+            mp_rates3d(k,67)=mp_rates3d(k,67)+(sed_g(k+1)-sed_g(k))*odzq*onstep(4)*orho
+#endif
          enddo
 
          if (rg(kts).gt.R1*1000.) &
@@ -3951,6 +4409,11 @@
           qiten(k) = qiten(k) - xri*odt
           niten(k) = -ni1d(k)*odt
           tten(k) = tten(k) - lfus*ocp(k)*xri*odt*(1-IFDRY)
+
+#ifdef Pl_write
+      l_rates3d(k,25) = -1.*lfus*ocp(k)*xri*odt*(1-IFDRY)
+      mp_rates3d(k,61) = xri*odt
+#endif
          endif
 
          xrc = MAX(0.0, qc1d(k) + qcten(k)*DT)
@@ -3962,6 +4425,10 @@
           qcten(k) = qcten(k) - xrc*odt
           ncten(k) = ncten(k) - xnc*odt
           tten(k) = tten(k) + lfus2*ocp(k)*xrc*odt*(1-IFDRY)
+#ifdef Pl_write
+      l_rates3d(k,26) = lfus2*ocp(k)*xrc*odt*(1-IFDRY)
+      mp_rates3d(k,62) = xrc*odt
+#endif
          endif
       enddo
       endif
